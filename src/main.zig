@@ -103,7 +103,7 @@ pub fn generateSentence(rules: Rules, s: Symbol) !Symbols {
 pub fn print(symbols: Symbols) void {
     for (symbols.items) |symbol| {
         var str = @tagName(symbol);
-        std.debug.print("{s}", .{str});
+        std.debug.print("{s} ", .{str});
     }
     std.debug.print("\n", .{});
 }
@@ -115,6 +115,17 @@ pub fn main() !void {
     var rules = Rules.init(allocator);
     defer rules.deinit();
 
+    // S <- T1
+    {
+        var rule: Rule = .{ //
+            .head = Symbol.S,
+            .body = Symbols.init(allocator),
+        };
+        try rule.body.append(Symbol.T0);
+        try rules.append(rule);
+    }
+
+    // S <- T2
     {
         var rule: Rule = .{ //
             .head = Symbol.S,
@@ -123,12 +134,15 @@ pub fn main() !void {
         try rule.body.append(Symbol.T1);
         try rules.append(rule);
     }
+
+    // S <- S S
     {
         var rule: Rule = .{ //
             .head = Symbol.S,
             .body = Symbols.init(allocator),
         };
-        try rule.body.append(Symbol.T2);
+        try rule.body.append(Symbol.S);
+        try rule.body.append(Symbol.S);
         try rules.append(rule);
     }
 
