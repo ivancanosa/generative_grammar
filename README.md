@@ -8,4 +8,4 @@ S <- T0 | T1 | S S
 The generated solution could contain sentences of any length of T0 and T1 symbols.
 
 # Possible extensions
-This implementation only contains the barebones and applies the rules in a random order. Something more useful would be to define a minimum and maximum lenght of the generated sentence, as well which symbols must exists in the result. The algorithm then would use a searching algorithm to generate a desired solution.
+This implementation only contains the barebones and applies the rules in a random order. Something more useful would be to define a minimum and maximum length for the generated sentence, as well as which symbols must exists in the result. The algorithm would then use a searching algorithm to generate the desired solution.
