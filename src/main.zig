@@ -115,13 +115,13 @@ pub fn main() !void {
     var rules = Rules.init(allocator);
     defer rules.deinit();
 
-    // S <- T1
+    // S <- T0
     {
         var rule = Rule{ .symbols = &[_]Symbol{ Symbol.S, Symbol.T0 } };
         try rules.append(rule);
     }
 
-    // S <- T2
+    // S <- T1
     {
         var rule = Rule{ .symbols = &[_]Symbol{ Symbol.S, Symbol.T1 } };
         try rules.append(rule);
