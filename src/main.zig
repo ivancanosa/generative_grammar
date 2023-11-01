@@ -1,17 +1,12 @@
 const std = @import("std");
+const RndGen = std.rand.DefaultPrng;
 
-const T0 = struct {};
-const T1 = struct {};
-const T2 = struct {};
-
-const S = struct {};
-
-const Symbol = union(enum) {
-    T0: void,
-    T1: void,
-    T2: void,
-    T3: void,
-    S: void,
+const Symbol = enum {
+    T0,
+    T1,
+    T2,
+    T3,
+    S,
 };
 
 const Symbols = std.ArrayList(Symbol);
@@ -25,13 +20,17 @@ const Rules = std.ArrayList(Rule);
 
 pub fn hasSymbol(symbols: Symbols, symbol: Symbol) bool {
     for (symbols.items) |it| {
-        return std.meta.eql(it, symbol);
+        if (it == symbol) {
+            return true;
+        }
     }
     return false;
 }
 
 pub fn generateSentence(rules: Rules, s: Symbol) !Symbols {
     var allocator = std.heap.page_allocator;
+
+    var rnd = RndGen.init(@intCast(std.time.milliTimestamp()));
 
     var nonterminals = Symbols.init(allocator);
     defer nonterminals.deinit();
@@ -56,6 +55,9 @@ pub fn generateSentence(rules: Rules, s: Symbol) !Symbols {
         }
     }
 
+    var correctRulesPos = std.ArrayList(usize).init(allocator);
+    defer correctRulesPos.deinit();
+
     while (!finished) {
         // Get next nonterminal pos
         var nonterminalPos: usize = 0;
@@ -68,15 +70,21 @@ pub fn generateSentence(rules: Rules, s: Symbol) !Symbols {
             }
         }
 
-        // Apply a rule and expand the symbol
-        for (rules.items) |rule| {
-            if (std.meta.eql(rule.head, nonterminalSymbol)) {
-                _ = result.orderedRemove(nonterminalPos);
-                for (rule.body.items) |bodyS| {
-                    try result.insert(nonterminalPos, bodyS);
-                    nonterminalPos += 1;
-                }
+        // Compute the current correct rules
+        correctRulesPos.clearRetainingCapacity();
+        for (rules.items, 0..) |rule, i| {
+            if (rule.head == nonterminalSymbol) {
+                try correctRulesPos.append(i);
             }
+        }
+
+        // Apply a random rule
+        const rulePos = rnd.random().int(usize) % correctRulesPos.items.len;
+        const rule = rules.items[rulePos];
+        _ = result.orderedRemove(nonterminalPos);
+        for (rule.body.items) |bodyS| {
+            try result.insert(nonterminalPos, bodyS);
+            nonterminalPos += 1;
         }
 
         // Check if the result only has terminal symbols
@@ -104,18 +112,27 @@ pub fn main() !void {
     var gpa = std.heap.GeneralPurposeAllocator(.{}){};
     var allocator = gpa.allocator();
 
-    var rule: Rule = .{ //
-        .head = .{ .S = {} },
-        .body = Symbols.init(allocator),
-    };
-
-    try rule.body.append(.{ .T1 = {} });
-
     var rules = Rules.init(allocator);
     defer rules.deinit();
-    try rules.append(rule);
 
-    var result = try generateSentence(rules, .{ .S = {} });
+    {
+        var rule: Rule = .{ //
+            .head = Symbol.S,
+            .body = Symbols.init(allocator),
+        };
+        try rule.body.append(Symbol.T1);
+        try rules.append(rule);
+    }
+    {
+        var rule: Rule = .{ //
+            .head = Symbol.S,
+            .body = Symbols.init(allocator),
+        };
+        try rule.body.append(Symbol.T2);
+        try rules.append(rule);
+    }
+
+    var result = try generateSentence(rules, Symbol.S);
     defer result.deinit();
 
     print(result);
