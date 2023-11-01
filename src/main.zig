@@ -11,9 +11,9 @@ const Symbol = enum {
 
 const Symbols = std.ArrayList(Symbol);
 
+// The first symbol of the slice is the head
 const Rule = struct {
-    head: Symbol,
-    body: Symbols,
+    symbols: []const Symbol,
 };
 
 const Rules = std.ArrayList(Rule);
@@ -40,7 +40,7 @@ pub fn generateSentence(rules: Rules, s: Symbol) !Symbols {
 
     // Compute the nonterminal symbols
     for (rules.items) |rule| {
-        const head = rule.head;
+        const head = rule.symbols[0];
         if (!hasSymbol(nonterminals, head)) {
             try nonterminals.append(head);
         }
@@ -73,7 +73,7 @@ pub fn generateSentence(rules: Rules, s: Symbol) !Symbols {
         // Compute the current correct rules
         correctRulesPos.clearRetainingCapacity();
         for (rules.items, 0..) |rule, i| {
-            if (rule.head == nonterminalSymbol) {
+            if (rule.symbols[0] == nonterminalSymbol) {
                 try correctRulesPos.append(i);
             }
         }
@@ -82,7 +82,7 @@ pub fn generateSentence(rules: Rules, s: Symbol) !Symbols {
         const rulePos = rnd.random().int(usize) % correctRulesPos.items.len;
         const rule = rules.items[rulePos];
         _ = result.orderedRemove(nonterminalPos);
-        for (rule.body.items) |bodyS| {
+        for (rule.symbols[1..rule.symbols.len]) |bodyS| {
             try result.insert(nonterminalPos, bodyS);
             nonterminalPos += 1;
         }
@@ -117,32 +117,19 @@ pub fn main() !void {
 
     // S <- T1
     {
-        var rule: Rule = .{ //
-            .head = Symbol.S,
-            .body = Symbols.init(allocator),
-        };
-        try rule.body.append(Symbol.T0);
+        var rule = Rule{ .symbols = &[_]Symbol{ Symbol.S, Symbol.T0 } };
         try rules.append(rule);
     }
 
     // S <- T2
     {
-        var rule: Rule = .{ //
-            .head = Symbol.S,
-            .body = Symbols.init(allocator),
-        };
-        try rule.body.append(Symbol.T1);
+        var rule = Rule{ .symbols = &[_]Symbol{ Symbol.S, Symbol.T1 } };
         try rules.append(rule);
     }
 
     // S <- S S
     {
-        var rule: Rule = .{ //
-            .head = Symbol.S,
-            .body = Symbols.init(allocator),
-        };
-        try rule.body.append(Symbol.S);
-        try rule.body.append(Symbol.S);
+        var rule = Rule{ .symbols = &[_]Symbol{ Symbol.S, Symbol.S, Symbol.S } };
         try rules.append(rule);
     }
 
